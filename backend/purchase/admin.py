@@ -24,7 +24,7 @@ class PurchaseOrderProductAdmin(admin.ModelAdmin):
 
 
 class PurchaseOrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'PurchaseOrderNo')  # Adjust the fields as necessary
+    list_display = ('id', 'company')  # Adjust the fields as necessary
 
 
 class RFQProductAdmin(admin.ModelAdmin):

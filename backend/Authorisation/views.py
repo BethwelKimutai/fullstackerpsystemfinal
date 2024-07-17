@@ -87,7 +87,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 return Response({"message": "Company already approved"}, status=status.HTTP_400_BAD_REQUEST)
 
             admin_user = User.objects.create(
-                username=f"{company.email.split('@')[0]}-{random.randint(1000, 9999)}",
+                username=f"{company.email.split('@')[0]}-{random.randint(10, 99)}",
                 email=company.email,
                 company=company,
                 is_manager=True,
@@ -117,7 +117,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def companiesList(self, request):
-        companies = Company.objects.filter(is_approved=True)
+        companies = Company.objects.filter()
         serializer = CompanySerializer(companies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -143,6 +143,38 @@ class CompanyViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    def get_company_info(self, request, pk=None):
+        try:
+            # Ensure company_id is provided in the request data
+            company_id = request.data.get('company_id')
+            if not company_id:
+                return Response({"message": "Company ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Retrieve the company object using the provided ID
+            company = Company.objects.get(id=company_id)
+
+            # Prepare the company details
+            company_details = {
+                'id': company.id,
+                'name': company.name,
+                'email': company.email,
+                'country': company.country,
+                'number': company.number,
+                'address': company.address,
+                'company_name': company.companyName,
+                'company_size': company.companySize,
+                'website': company.website,  # Fixed typo: previously it was `company.companySize`
+                'phone': company.phone,
+                'logo': company.logo.url if company.logo else None  # Handle the logo URL
+            }
+
+            # Return the company details in the response
+            return Response(company_details, status=status.HTTP_200_OK)
+
+        except Company.DoesNotExist:
+            return Response({"message": "Company not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -185,7 +217,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 'jwt': tokens,
             }
 
-            return JsonResponse({"jwt": tokens, "code": "200"})
+            return Response({"jwt": tokens, "code": "200"})
 
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)

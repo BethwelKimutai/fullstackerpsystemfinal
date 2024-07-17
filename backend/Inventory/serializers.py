@@ -6,7 +6,7 @@ from .models import (Product, ProductCategory, ProductTemplate, ReplenishOrder, 
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
 
     class Meta:
@@ -15,7 +15,7 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
 
 class ProductTemplateSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
 
     class Meta:
@@ -24,7 +24,7 @@ class ProductTemplateSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
 
     class Meta:
@@ -35,7 +35,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ReplenishOrderSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
 
     class Meta:
         model = ReplenishOrder
@@ -43,7 +43,7 @@ class ReplenishOrderSerializer(serializers.ModelSerializer):
 
 
 class InventorySerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
 
     class Meta:
         model = Inventory
@@ -52,7 +52,7 @@ class InventorySerializer(serializers.ModelSerializer):
 
 
 class ReceiptSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
 
     class Meta:
         model = Receipt
@@ -61,7 +61,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
 
 
 class DeliverySerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
 
     class Meta:
         model = Delivery
@@ -70,7 +70,7 @@ class DeliverySerializer(serializers.ModelSerializer):
 
 
 class InternalTransferSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
 
     class Meta:
         model = InternalTransfer
@@ -79,7 +79,7 @@ class InternalTransferSerializer(serializers.ModelSerializer):
 
 
 class PhysicalInventorySerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
 
     class Meta:
         model = PhysicalInventory
@@ -88,7 +88,7 @@ class PhysicalInventorySerializer(serializers.ModelSerializer):
 
 
 class ScrapSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
 
     class Meta:
         model = Scrap
@@ -97,7 +97,7 @@ class ScrapSerializer(serializers.ModelSerializer):
 
 
 class LandedCostSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
 
     class Meta:
         model = LandedCost
@@ -106,7 +106,7 @@ class LandedCostSerializer(serializers.ModelSerializer):
 
 
 class ProductAttributeSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
 
     class Meta:
@@ -115,7 +115,7 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
 
 
 class UnitOfMeasureCategorySerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
 
     class Meta:
@@ -124,7 +124,7 @@ class UnitOfMeasureCategorySerializer(serializers.ModelSerializer):
 
 
 class ProductPackagingSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
 
     class Meta:
@@ -133,7 +133,7 @@ class ProductPackagingSerializer(serializers.ModelSerializer):
 
 
 class ReorderingRuleSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
 
     class Meta:
@@ -142,7 +142,7 @@ class ReorderingRuleSerializer(serializers.ModelSerializer):
 
 
 class BarcodeNomenclatureSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
+    id = serializers.UUIDField(format='hex', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
 
     class Meta:

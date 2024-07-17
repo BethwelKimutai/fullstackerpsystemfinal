@@ -39,12 +39,6 @@ class VendorCreateSerializer(serializers.ModelSerializer):
         return data
 
 
-class PurchaseOrderProductSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PurchaseOrderProduct
-        fields = ['product', 'quantity', 'unit_price','UOM', 'subtotal']
-
-
 class RFQProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = RFQProduct
@@ -68,22 +62,28 @@ class RequestForQuotationSerializer(serializers.ModelSerializer):
         return rfq
 
 
+class PurchaseOrderProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurchaseOrderProduct
+        fields = ['product', 'description', 'quantity', 'unit_of_measure', 'direct_unit_cost', 'discount',
+                  'allow_invoice_discount', 'vat_identifier', 'amount']
+
+
 class PurchaseOrderSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(format='hex')
     products = PurchaseOrderProductSerializer(many=True)
 
     class Meta:
         model = PurchaseOrder
-        fields = ['id', 'vendor', 'vendor_reference', 'currency', 'order_deadline', 'expected_arrival', 'deliver_to',
-                  'taxes', 'tax_excluded', 'total', 'company', 'buyer', 'reference', 'confirmation_date',
-                  'source_document', 'created_at', 'products']
+        fields = ['id', 'company', 'vendor', 'order_date', 'expected_arrival', 'currency', 'purchase_order_no',
+                  'products', 'description', 'discount', 'subtotal_less_discount', 'tax_rate', 'total_tax', 'shipping',
+                  'other_costs', 'grand_total']
 
     def create(self, validated_data):
         products_data = validated_data.pop('products')
-        po = PurchaseOrder.objects.create(**validated_data)
+        purchase_order = PurchaseOrder.objects.create(**validated_data)
         for product_data in products_data:
-            PurchaseOrderProduct.objects.create(purchase_order=po, **product_data)
-        return po
+            PurchaseOrderProduct.objects.create(purchase_order=purchase_order, **product_data)
+        return purchase_order
 
 
 class VendorPriceListSerializer(serializers.ModelSerializer):

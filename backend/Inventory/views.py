@@ -326,7 +326,8 @@ class PhysicalInventoryViewSet(viewsets.ModelViewSet):
         try:
             physical_inventory = self.get_object()
             data = request.data.copy()
-            data['difference'] = data.get('counted_quantity', physical_inventory.counted_quantity) - data.get('on_hand_quantity', physical_inventory.on_hand_quantity)
+            data['difference'] = data.get('counted_quantity', physical_inventory.counted_quantity) - data.get(
+                'on_hand_quantity', physical_inventory.on_hand_quantity)
             serializer = PhysicalInventorySerializer(physical_inventory, data=data, partial=True)
             if serializer.is_valid():
                 serializer.save()
@@ -343,6 +344,7 @@ class PhysicalInventoryViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"message": f"Error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class ScrapViewSet(viewsets.ModelViewSet):
     serializer_class = ScrapSerializer
@@ -388,6 +390,8 @@ class ScrapViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"message": f"Error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class LandedCostViewSet(viewsets.ModelViewSet):
     serializer_class = LandedCostSerializer
 
@@ -397,7 +401,7 @@ class LandedCostViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def create_landed_cost(self, request):
-        data = request.data.copy()
+        data = request.data
         data['company'] = request.user.company_id
         serializer = LandedCostSerializer(data=data)
         if serializer.is_valid():
@@ -405,7 +409,7 @@ class LandedCostViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['post'])
     def get_landed_costs(self, request):
         landed_costs = self.get_queryset()
         serializer = LandedCostSerializer(landed_costs, many=True)
@@ -444,8 +448,9 @@ class ProductAttributeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def create_product_attribute(self, request):
         try:
-            data = request.data.copy()
-            data['company_id'] = str(request.user.company_id)
+            data = request.data
+            company_id = request.data.get('company_id')
+            data['company'] = company_id
             serializer = ProductAttributeSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
@@ -456,9 +461,13 @@ class ProductAttributeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def get_product_attributes(self, request):
-        attributes = self.get_queryset()
-        serializer = ProductAttributeSerializer(attributes, many=True)
-        return Response(serializer.data)
+        try:
+            company_id = request.data.get('company_id')
+            attributes = ProductAttributeSerializer.objects.filter(company_id=company_id)
+            serializer = ProductAttributeSerializer(attributes, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['put'])
     def update_product_attribute(self, request, pk=None):
@@ -482,6 +491,7 @@ class ProductAttributeViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 class UnitOfMeasureCategoryViewSet(viewsets.ModelViewSet):
     serializer_class = UnitOfMeasureCategorySerializer
 
@@ -492,8 +502,9 @@ class UnitOfMeasureCategoryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def create_unit_of_measure_category(self, request):
         try:
-            data = request.data.copy()
-            data['company_id'] = str(request.user.company_id)
+            data = request.data
+            company_id = request.data.get('company_id')
+            data['company'] = company_id
             serializer = UnitOfMeasureCategorySerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
@@ -502,33 +513,36 @@ class UnitOfMeasureCategoryViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['post'])
     def get_unit_of_measure_categories(self, request):
-        categories = self.get_queryset()
-        serializer = UnitOfMeasureCategorySerializer(categories, many=True)
-        return Response(serializer.data)
+        try:
+            company_id = request.data.get('company_id')
+            uom = UnitOfMeasureCategorySerializer.objects.filter(company_id=company_id)
+            serializer = UnitOfMeasureCategorySerializer(uom, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['put'])
     def update_unit_of_measure_category(self, request, pk=None):
         try:
-            unit_of_measure_category = self.get_object()
-            data = request.data.copy()
-            serializer = UnitOfMeasureCategorySerializer(unit_of_measure_category, data=data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            category = UnitOfMeasureCategory.objects.get(pk=pk)
+        except UnitOfMeasureCategory.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = UnitOfMeasureCategorySerializer(category, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['delete'])
     def delete_unit_of_measure_category(self, request, pk=None):
         try:
-            unit_of_measure_category = self.get_object()
-            unit_of_measure_category.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            category = UnitOfMeasureCategory.objects.get(pk=pk)
+        except UnitOfMeasureCategory.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        category.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ProductPackagingViewSet(viewsets.ModelViewSet):
@@ -541,8 +555,9 @@ class ProductPackagingViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def create_product_packaging(self, request):
         try:
-            data = request.data.copy()
-            data['company'] = str(request.user.company_id)
+            data = request.data
+            company_id = request.data.get('company_id')
+            data['company'] = company_id
             serializer = ProductPackagingSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
@@ -553,9 +568,13 @@ class ProductPackagingViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def get_product_packaging(self, request):
-        packaging = self.get_queryset()
-        serializer = ProductPackagingSerializer(packaging, many=True)
-        return Response(serializer.data)
+        try:
+            company_id = request.data.get('company_id')
+            product_packaging = ProductPackagingSerializer.objects.filter(company_id=company_id)
+            serializer = BarcodeNomenclatureSerializer(product_packaging, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['put'])
     def update_product_packaging(self, request, pk=None):
@@ -579,43 +598,15 @@ class ProductPackagingViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 class ReorderingRuleViewSet(viewsets.ModelViewSet):
     serializer_class = ReorderingRuleSerializer
-
-    def decode_jwt(self, token):
-        try:
-            access_token = AccessToken(token)
-            return access_token
-        except Exception as e:
-            raise ValueError(f"Error decoding token: {str(e)}")
-
-    def get_queryset(self):
-        user = self.request.user
-        return ReorderingRule.objects.filter(product__company=user.company)
 
     @action(detail=False, methods=['post'])
     def create_reordering_rule(self, request):
         try:
-            token = request.COOKIES.get('jwt')
-            if not token:
-                return Response({"message": "JWT token not found in cookies"}, status=status.HTTP_400_BAD_REQUEST)
-
-            decoded_token = self.decode_jwt(token)
-            company_id = decoded_token.get('company_id')
-            if not company_id:
-                return Response({"message": "Company ID not found in token"}, status=status.HTTP_400_BAD_REQUEST)
-
-            try:
-                company_id = str(uuid.UUID(company_id))
-            except ValueError as e:
-                return Response({"message": f"Invalid company_id format: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-
-            try:
-                company = Company.objects.get(id=company_id)
-            except Company.DoesNotExist:
-                return Response({"message": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
-
             data = request.data
+            company_id = request.data.get('company_id')
             data['company'] = company_id
             serializer = ReorderingRuleSerializer(data=data)
 
@@ -626,11 +617,15 @@ class ReorderingRuleViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['post'])
     def get_reordering_rules(self, request):
-        rules = self.get_queryset()
-        serializer = ReorderingRuleSerializer(rules, many=True)
-        return Response(serializer.data)
+        try:
+            company_id = request.data.get('company_id')
+            reorderingRules = ReorderingRuleSerializer.objects.filter(company_id=company_id)
+            serializer = BarcodeNomenclatureSerializer(reorderingRules, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['put'])
     def update_reordering_rule(self, request, pk=None):
@@ -654,44 +649,18 @@ class ReorderingRuleViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+
 class BarcodeNomenclatureViewSet(viewsets.ModelViewSet):
     serializer_class = BarcodeNomenclatureSerializer
-
-    def decode_jwt(self, token):
-        try:
-            access_token = AccessToken(token)
-            return access_token
-        except Exception as e:
-            raise ValueError(f"Error decoding token: {str(e)}")
-
-    def get_queryset(self):
-        user = self.request.user
-        return BarcodeNomenclature.objects.filter(company=user.company)
 
     @action(detail=False, methods=['post'])
     def create_barcode_nomenclature(self, request):
         try:
-            token = request.COOKIES.get('jwt')
-            if not token:
-                return Response({"message": "JWT token not found in cookies"}, status=status.HTTP_400_BAD_REQUEST)
-
-            decoded_token = self.decode_jwt(token)
-            company_id = decoded_token.get('company_id')
-            if not company_id:
-                return Response({"message": "Company ID not found in token"}, status=status.HTTP_400_BAD_REQUEST)
-
-            try:
-                company_id = str(uuid.UUID(company_id))
-            except ValueError as e:
-                return Response({"message": f"Invalid company_id format: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-
-            try:
-                company = Company.objects.get(id=company_id)
-            except company.DoesNotExist:
-                return Response({"message": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
-
             data = request.data
-            data['company'] = company_id
+            company_id = request.data.get('company_id')
+            data['company_id'] = company_id
             serializer = BarcodeNomenclatureSerializer(data=data)
 
             if serializer.is_valid():
@@ -701,11 +670,15 @@ class BarcodeNomenclatureViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['post'])
     def get_barcode_nomenclatures(self, request):
-        nomenclatures = self.get_queryset()
-        serializer = BarcodeNomenclatureSerializer(nomenclatures, many=True)
-        return Response(serializer.data)
+        try:
+            company_id = request.data.get('company_id')
+            nomenclatures = BarcodeNomenclature.objects.filter(company_id=company_id)
+            serializer = BarcodeNomenclatureSerializer(nomenclatures, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['put'])
     def update_barcode_nomenclature(self, request, pk=None):
@@ -728,3 +701,5 @@ class BarcodeNomenclatureViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+

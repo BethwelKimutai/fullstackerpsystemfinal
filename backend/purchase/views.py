@@ -23,6 +23,25 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+from django.shortcuts import render
+from io import BytesIO
+from django.http import HttpResponse
+from django.template.loader import get_template
+from django.views import View
+from xhtml2pdf import pisa
+
+
+def render_to_pdf(template_src, context_dict={}):
+    template = get_template(template_src
+                            )
+    html = template.render(context_dict)
+    result = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+    if not pdf.err:
+        return HttpResponse(result.getvalue(), content_type='application/pdf')
+    return None
+
+
 class VendorViewSet(viewsets.ModelViewSet):
     queryset = Vendor.objects.all()
     serializer_class = VendorSerializer
@@ -205,12 +224,6 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             logger.error(f"Error creating PO: {e}")
             return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=False, methods=['get'])
-    def get_pos(self, request):
-        pos = self.get_queryset().filter(company=request.user.company)
-        serializer = PurchaseOrderSerializer(pos, many=True)
-        return Response(serializer.data)
-
     @action(detail=True, methods=['get'])
     def print_po(self, request, pk=None):
         po = self.get_object()
@@ -222,13 +235,13 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             'company_phone': company.phone,
             'company_email': company.email,
             'company_website': company.website,
-            'company_logo': company.logo.image.url if hasattr(company, 'logo') else '',
+            'company_logo': company.logo.url if company.logo else '',
             'company_footer': company.footer,
         })
         pdf_file = HTML(string=html_string).write_pdf()
 
         response = HttpResponse(pdf_file, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="PO_{po.reference}.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="PO_{po.purchase_order_no}.pdf"'
         return response
 
     @action(detail=True, methods=['post'])
@@ -242,58 +255,28 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             'company_phone': company.phone,
             'company_email': company.email,
             'company_website': company.website,
-            'company_logo': company.logo.image.url if hasattr(company, 'logo') else '',
+            'company_logo': company.logo.url if company.logo else '',
             'company_footer': company.footer,
         })
         pdf_file = HTML(string=html_string).write_pdf()
 
-        subject = f"Purchase Order: {po.reference}"
+        subject = f"Purchase Order: {po.purchase_order_no}"
         body = f"Dear {po.vendor.company_name},\n\nPlease find attached the Purchase Order.\n\nBest regards,\n{company.name}"
-        email = EmailMessage(subject, body, settings.DEFAULT_FROM_EMAIL, [po.vendor.email])
-        email.attach(f"PO_{po.reference}.pdf", pdf_file, 'application/pdf')
+        email = EmailMessage(subject, body, company.email, [po.vendor.email])
+        email.attach(f"PO_{po.purchase_order_no}.pdf", pdf_file, 'application/pdf')
         try:
             email.send()
             return Response({'status': 'email sent'}, status=status.HTTP_200_OK)
         except Exception as e:
-            logger.error(f"Error sending email for PO {po.reference}: {e}")
-            return Response({'status': 'email failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'status': 'error', 'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def _generate_pdf(self, po, return_as_file=False):
-        buffer = BytesIO()
-        p = canvas.Canvas(buffer)
+    @action(detail=True, methods=['post'])
+    def get_po(self, request, *args, **kwargs):
+        data = request.data
+        serializer = PurchaseOrderSerializer(data=data)
 
-        # Include company logo if available
-        if hasattr(po.company, 'logo') and po.company.logo.image:
-            logo_path = po.company.logo.image.path
-            p.drawImage(logo_path, 400, 750, width=100, height=50)
-
-        p.drawString(100, 750, f"Purchase Order: {po.reference}")
-        p.drawString(100, 730, f"Vendor: {po.vendor.company_name}")
-        p.drawString(100, 710, f"Product: {po.product.name}")
-        p.drawString(100, 690, f"Total: {po.total}")
-        p.showPage()
-        p.save()
-        buffer.seek(0)
-
-        if return_as_file:
-            return buffer
-
-        response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="PO_{po.reference}.pdf"'
-        return response
-
-    def _send_email(self, po, pdf_file):
-        subject = f"Purchase Order: {po.reference}"
-        body = f"Dear {po.vendor.company_name},\n\nPlease find attached the Purchase Order.\n\nBest regards,\n{po.company.name}"
-        email = EmailMessage(subject, body, settings.DEFAULT_FROM_EMAIL, [po.vendor.email])
-        email.attach(f"PO_{po.reference}.pdf", pdf_file.read(), 'application/pdf')
-        try:
-            email.send()
-            return True
-        except Exception as e:
-            logger.error(f"Error sending email for PO {po.reference}: {e}")
-            return False
-
+        pdf = render_to_pdf('templates/purchase_order.html', data)
+        return HttpResponse(pdf, content_type='application/pdf')
 
 class VendorPriceListViewSet(viewsets.ModelViewSet):
     serializer_class = VendorPriceListSerializer

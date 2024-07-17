@@ -65,24 +65,14 @@ class PurchaseOrderProduct(models.Model):
 
 class PurchaseOrder(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    CompanyName = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_names')
-    CompanyAddress = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='po_addresses')
-    CompanyPhone = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_phones')
-    CompanyEmail = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_emails')
-    CompanyWebsite = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_websites')
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
     orderDate = models.DateField()
     orderDeadline = models.DateField()
     ExpectedArrival = models.DateField()
     Currency = models.CharField(max_length=120)
     PurchaseOrderNo = models.CharField(max_length=100)
-    VendorNo = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='vendor_numbers')
-    VendorName = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='vendor_names')
-    VendorCompany = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='vendor_companies')
-    VendorAddress = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='vendor_addresses')
-    VendorPhone = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='vendor_phones')
-    VendorEmail = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='vendor_emails')
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
     products = models.ForeignKey(PurchaseOrderProduct, on_delete=models.CASCADE, related_name='purchase_order_products')
-    description = models.CharField(max_length=128)  # Example of a non-foreign key field
 
     # Other fields
     Discount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -97,7 +87,6 @@ class PurchaseOrder(models.Model):
         # Calculate total and save
         self.GrandTotal = self.SubtotallessDiscount + self.TotalTax + self.Shipping + self.OtherCosts
         super().save(*args, **kwargs)
-
 
 class RFQProduct(models.Model):
     rfq = models.ForeignKey(RequestForQuotation, on_delete=models.CASCADE, related_name='products')
