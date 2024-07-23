@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Order</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; background: #fff; }
+        .container { width: 80%; margin: auto; padding: 20px; }
+        header { text-align: center; margin-bottom: 20px; }
+        header h1 { font-size: 24px; margin: 0; }
+        .address-section, .order-details-section, .items-section, .total-section, .notes-section { margin-bottom: 20px; }
+        .address { display: flex; justify-content: space-between; }
+        .address div { width: 45%; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        table, th, td { border: 1px solid #000; }
+        th, td { padding: 8px; text-align: left; }
+        .total-section div { display: flex; justify-content: space-between; }
+        .notes-section p { margin: 0; padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd; }
+        .bold { font-weight: bold; }
+        .right-align { text-align: right; }
+        .center-align { text-align: center; }
+        .order-header { display: flex; justify-content: space-between; align-items: center; }
+        .order-header h2 { margin: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+        </header>
+        <section class="order-details-section">
+            <div class="order-header">
+                <div>
+                    <h2>Purchase Order</h2>
+                    <p class="text-zinc-500"># {{ po.purchase_order_no }}</p>
+                    <p class="text-lg font-bold text-red-600">Balance Due</p>
+                    <p class="text-2xl font-bold">KES{{ po.grand_total }}</p>
+                </div>
+                <div class="right-align">
+                    <p><span class="bold">Order Date:</span> {{ po.order_date }}</p>
+                    <p><span class="bold">Order Deadline:</span> {{ po.order_deadline }}</p>
+                    <p><span class="bold">Expected Arrival:</span> {{ po.expected_arrival }}</p>
+                    <p><span class="bold">P.O.#:</span> {{ po.purchase_order_no }}</p>
+                </div>
+            </div>
+            <div class="address">
+                <div>
+                    <h3>{{ po.company.name }}</h3>
+                    <p>Tax ID: {{ po.company.tax_id }}</p>
+                    <p>{{ po.company.address }}</p>
+                    <p>Email: {{ po.company.email }}</p>
+                    <p>Tel: {{ po.company.phone }}</p>
+                </div>
+                <div>
+                    <h3>Bill To</h3>
+                    <p>{{ po.vendor.name }}</p>
+                    <p>{{ po.vendor.address }}</p>
+                    <p>{{ po.vendor.phone }}</p>
+                    <p>{{ po.vendor.email }}</p>
+                </div>
+            </div>
+        </section>
+        <section class="items-section">
+            <table>
+                <thead class="bg-green-600 text-white">
+                    <tr>
+                        <th class="border border-zinc-200 p-2">#</th>
+                        <th class="border border-zinc-200 p-2">Item & Description</th>
+                        <th class="border border-zinc-200 p-2">Qty</th>
+                        <th class="border border-zinc-200 p-2">UOM</th>
+                        <th class="border border-zinc-200 p-2">Rate</th>
+                        <th class="border border-zinc-200 p-2">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in po.products.all %}
+                    <tr>
+                        <td class="border border-zinc-200 p-2 text-center">{{ forloop.counter }}</td>
+                        <td class="border border-zinc-200 p-2">{{ product.description }}</td>
+                        <td class="border border-zinc-200 p-2 text-center">{{ product.quantity }}</td>
+                        <td class="border border-zinc-200 p-2 text-center">{{ product.uom.name }}</td>
+                        <td class="border border-zinc-200 p-2 text-right">{{ product.unit_price }}</td>
+                        <td class="border border-zinc-200 p-2 text-right">{{ product.subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        <section class="total-section">
+            <div>
+                <p>Discount</p>
+                <p>{{ po.Discount }}</p>
+            </div>
+            <div>
+                <p>Subtotal Less Discount</p>
+                <p>{{ po.subtotallessdiscount }}</p>
+            </div>
+            <div>
+                <p>Total Rate(16%)</p>
+                <p>{{ po.TaxRate }}</p>
+            </div>
+            <div>
+                <p>Total Tax</p>
+                <p>{{ po.TotalTax }}</p>
+            </div>
+            <div>
+                <p>General Rate ({{ po.tax_rate }}%)</p>
+                <p>{{ po.total_tax }}</p>
+            </div>
+            <div>
+                <p>Shipping</p>
+                <p>{{ po.Shipping }}</p>
+            </div>
+            <div>
+                <p>Other Costs</p>
+                <p>{{ po.OtherCosts }}</p>
+            </div>
+            <div>
+                <p class="bold">Total</p>
+                <p class="bold">KES{{ po.grand_total }}</p>
+            </div>
+            <div>
+                <p class="bold">Balance Due</p>
+                <p class="bold">KES{{ po.grand_total }}</p>
+            </div>
+        </section>
+        <section class="notes-section">
+            <p>Notes: Thank you for your business</p>
+        </section>
+        <footer class="center-align">
+            <p>Cool Environment Everywhere!</p>
+        </footer>
+    </div>
+</body>
+</html>
